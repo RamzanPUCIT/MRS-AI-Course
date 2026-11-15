@@ -1,0 +1,9 @@
+# Class demo folder (has its own git repo inside)
+Week1/
+
+# Python / Jupyter junk
+.ipynb_checkpoints/
+__pycache__/
+*.pyc
+.venv/
+venv/
