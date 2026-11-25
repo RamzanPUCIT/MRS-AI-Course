@@ -13,8 +13,12 @@ Every class has its own file, saved in sequence.
 | 04 | Command Line Git | [C04_command_line_git.ipynb](C04_command_line_git.ipynb) | 06 Nov 2026 |
 | 05 | Loops | [C05_loops.ipynb](C05_loops.ipynb) | 14 Nov 2026 |
 | 06 | Strings | [C06_strings.ipynb](C06_strings.ipynb) | 14 Nov 2026 |
+| 07 | Functions | [C07_functions.ipynb](C07_functions.ipynb) | 21 Nov 2026 |
+| 08 | Clean Code | [C08_clean-code.ipynb](C08_clean-code.ipynb) | 22 Nov 2026 |
+| 09 | Lists | [C09_lists.ipynb](C09_lists.ipynb) | 22 Nov 2026 |
+| 10 | Dicts | [C10_dicts.ipynb](C10_dicts.ipynb) | 22 Nov 2026 |
 
-**Total classes so far:** 6
+**Total classes so far:** 10
 
 ## How to use
 

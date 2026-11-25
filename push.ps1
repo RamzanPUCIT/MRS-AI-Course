@@ -1,18 +1,21 @@
 # MRS AI Course - daily push script
-# Use:  .\push.ps1            (auto message, e.g. "Day 7: Lists")
-#       .\push.ps1 "my note"  (custom commit message)
-param([string]$Message)
+# Har nayi / badli hui class file ka apna alag commit banta hai, class number ke sequence mein:
+#   Day 07: Functions, Day 08: Clean Code, ...
+# Phir README update hota hai aur sab kuch GitHub par push ho jata hai.
+#
+# Use:  .\push.ps1
 
 Set-Location $PSScriptRoot
 $RepoUrl = 'https://github.com/RamzanPUCIT/MRS-AI-Course'
+$TextInfo = (Get-Culture).TextInfo
 
-# 1) Find class files: C01.ipynb, C05_loops.ipynb, C07_lists.py ...
+# 1) Class files dhoondo: C01.ipynb, C05_loops.ipynb, C08_clean-code.ipynb, C11_files.py ...
 $classes = @()
 foreach ($f in Get-ChildItem -File) {
     if ($f.Name -match '^C(\d+)(?:_(.+))?\.(ipynb|py)$') {
         $num = [int]$Matches[1]
         if ($Matches[2]) {
-            $topic = (Get-Culture).TextInfo.ToTitleCase(($Matches[2] -replace '_', ' ').ToLower())
+            $topic = $TextInfo.ToTitleCase(($Matches[2] -replace '[_-]', ' ').ToLower())
         } else {
             $topic = "Class $num"
         }
@@ -27,11 +30,34 @@ foreach ($f in Get-ChildItem -File) {
 $classes = @($classes | Sort-Object Day, File)
 
 if ($classes.Count -eq 0) {
-    Write-Host "No class files found (expected names like C07_lists.ipynb)." -ForegroundColor Yellow
+    Write-Host "Koi class file nahi mili (naam aisa hona chahiye: C11_files.ipynb)." -ForegroundColor Yellow
     exit 1
 }
 
-# 2) Rebuild README.md (class list in sequence)
+# 2) Git mein kaun si files nayi (??) ya badli hui hain
+$status = @{}
+foreach ($line in (git status --porcelain -uall)) {
+    if ($line.Length -gt 3) {
+        $path = $line.Substring(3).Trim('"')
+        $status[$path] = $line.Substring(0, 2)
+    }
+}
+
+# 3) Har class file ka alag commit, sequence mein
+$made = 0
+foreach ($c in $classes) {
+    if (-not $status.ContainsKey($c.File)) { continue }
+    $label = 'Day {0:D2}: {1}' -f $c.Day, $c.Topic
+    if ($status[$c.File] -ne '??') { $label = "Update $label" }
+
+    git add -- $c.File
+    git commit -q -m $label
+    if ($LASTEXITCODE -ne 0) { Write-Host "Commit failed: $($c.File)" -ForegroundColor Red; exit 1 }
+    Write-Host "  + $label" -ForegroundColor Cyan
+    $made++
+}
+
+# 4) README dobara banao (saari classes ki table)
 $lines = @(
     '# MRS-AI-Course',
     '',
@@ -61,26 +87,24 @@ $lines += @(
 )
 [System.IO.File]::WriteAllLines((Join-Path $PSScriptRoot 'README.md'), $lines)
 
-# 3) Anything to push?
-$changes = git status --porcelain
-if (-not $changes) {
-    Write-Host "Nothing new to push. Everything is already on GitHub." -ForegroundColor Yellow
+# 5) README + baqi files (agar kuch aur badla ho) ek commit mein
+git add -A
+git diff --cached --quiet
+if ($LASTEXITCODE -ne 0) {
+    git commit -q -m 'Update README and other files'
+    Write-Host "  + Update README and other files" -ForegroundColor Cyan
+    $made++
+}
+
+if ($made -eq 0) {
+    Write-Host "Kuch naya nahi hai. Sab kuch pehle se GitHub par hai." -ForegroundColor Yellow
     exit 0
 }
 
-# 4) Commit + push
-if (-not $Message) {
-    $last = $classes[-1]
-    $Message = 'Day {0:D2}: {1}' -f $last.Day, $last.Topic
-}
-
-git add -A
-git commit -m $Message
-if ($LASTEXITCODE -ne 0) { Write-Host "Commit failed." -ForegroundColor Red; exit 1 }
-
-git push -u origin main
-if ($LASTEXITCODE -ne 0) { Write-Host "Push failed - check internet / GitHub login." -ForegroundColor Red; exit 1 }
+# 6) GitHub par bhejo
+git push
+if ($LASTEXITCODE -ne 0) { Write-Host "Push failed - internet / GitHub login check karo." -ForegroundColor Red; exit 1 }
 
 Write-Host ""
-Write-Host "Pushed: $Message" -ForegroundColor Green
+Write-Host "Done: $made commit(s) GitHub par chale gaye." -ForegroundColor Green
 Write-Host $RepoUrl
